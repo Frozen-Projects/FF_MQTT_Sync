@@ -12,7 +12,10 @@ https://github.com/eclipse/paho.mqtt.c
 * You can see a sample blueprint in "Content/BPs" folder. Just change connection informations based on your broker.
 * You need to put on of these protocols before URL "mqtt://", "mqtts://", "ws://", "wss://", "ssl://"
 * You need to put port after the URL
-* Other than these, there is no documentation.
+* Also you can look at these sample nodes
+https://github.com/Frozen-Projects/FF_MQTT_Sync/blob/main/Resources/Tutorial_1.pdf
+https://blueprintue.com/blueprint/tyjl3y62/
+https://blueprintue.com/blueprint/7i2hjgct/
 
 ## ASYNC
 https://github.com/FF-Plugins-Active/FF_MQTT_Async
