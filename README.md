@@ -15,7 +15,7 @@ https://github.com/eclipse/paho.mqtt.c
 * Also you can look at these sample nodes \
 https://github.com/Frozen-Projects/FF_MQTT_Sync/blob/main/Resources/Tutorial_1.pdf \
 https://blueprintue.com/blueprint/tyjl3y62/ \
-https://blueprintue.com/blueprint/7i2hjgct/ \
+https://blueprintue.com/blueprint/7i2hjgct/
 
 ## ASYNC
 https://github.com/FF-Plugins-Active/FF_MQTT_Async
