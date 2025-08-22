@@ -10,7 +10,7 @@ public class FF_MQTT_Sync : ModuleRules
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
-        UndefinedIdentifierWarningLevel = WarningLevel.Off;
+        CppCompileWarningSettings.UndefinedIdentifierWarningLevel = WarningLevel.Off;
         bEnableExceptions = true;
 
 		// You need to add openssl ios libraries or FF_OpenSSL (private) plugin for iOS support.
@@ -20,7 +20,6 @@ public class FF_MQTT_Sync : ModuleRules
 			{
 				"Core",
                 "OpenSSL",
-                "paho_c",
                 "paho_c_sync",
             }
 			);
@@ -36,13 +35,6 @@ public class FF_MQTT_Sync : ModuleRules
                 "JsonUtilities",
                 "JsonBlueprintUtilities",
             }
-			);
-		
-		DynamicallyLoadedModuleNames.AddRange(
-			new string[]
-			{
-
-			}
 			);
 	}
 }
