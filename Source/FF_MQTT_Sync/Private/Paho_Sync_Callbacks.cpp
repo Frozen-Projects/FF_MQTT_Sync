@@ -1,30 +1,6 @@
-#include "Paho_Manager_Sync.h"
+#include "Paho_Sync_Manager.h"
 
 #pragma region Internals
-
-const char* APaho_Manager_Sync::FStringToUTF8(const FString& In_String)
-{
-	const char* UTF8 = (const char*)StringCast<UTF8CHAR>(*In_String).Get();
-	return UTF8;
-}
-
-FString APaho_Manager_Sync::UTF8ToFString(const char* In_Char, size_t Length)
-{
-	if (Length == 0)
-	{
-		return StringCast<TCHAR>(In_Char).Get();
-	}
-
-	else if (Length > 0)
-	{
-		return StringCast<TCHAR>(In_Char, Length).Get();
-	}
-
-	else
-	{
-		return FString();
-	}
-}
 
 bool APaho_Manager_Sync::SetSSLParams(FString In_Protocol, FPahoSslOptions In_Options)
 {
@@ -36,32 +12,32 @@ bool APaho_Manager_Sync::SetSSLParams(FString In_Protocol, FPahoSslOptions In_Op
 
 		if (!In_Options.CAPath.IsEmpty() && FPaths::FileExists(In_Options.CAPath))
 		{
-			this->SSL_Options.CApath = APaho_Manager_Sync::FStringToUTF8(*In_Options.CAPath);
+			this->SSL_Options.CApath = (const char*)StringCast<UTF8CHAR>(*In_Options.CAPath).Get();
 		}
 
 		if (!In_Options.Path_KeyStore.IsEmpty() && FPaths::FileExists(In_Options.Path_KeyStore))
 		{
-			this->SSL_Options.keyStore = APaho_Manager_Sync::FStringToUTF8(*In_Options.Path_KeyStore);
+			this->SSL_Options.keyStore = (const char*)StringCast<UTF8CHAR>(*In_Options.Path_KeyStore).Get();
 		}
 
 		if (!In_Options.Path_TrustStore.IsEmpty() && FPaths::FileExists(In_Options.Path_TrustStore))
 		{
-			this->SSL_Options.trustStore = APaho_Manager_Sync::FStringToUTF8(*In_Options.Path_TrustStore);
+			this->SSL_Options.trustStore = (const char*)StringCast<UTF8CHAR>(*In_Options.Path_TrustStore).Get();
 		}
 
 		if (!In_Options.Path_PrivateKey.IsEmpty() && FPaths::FileExists(In_Options.Path_PrivateKey))
 		{
-			this->SSL_Options.privateKey = APaho_Manager_Sync::FStringToUTF8(*In_Options.Path_PrivateKey);
+			this->SSL_Options.privateKey = (const char*)StringCast<UTF8CHAR>(*In_Options.Path_PrivateKey).Get();
 		}
 
 		if (!In_Options.PrivateKeyPass.IsEmpty())
 		{
-			this->SSL_Options.privateKeyPassword = APaho_Manager_Sync::FStringToUTF8(*In_Options.PrivateKeyPass);
+			this->SSL_Options.privateKeyPassword = (const char*)StringCast<UTF8CHAR>(*In_Options.PrivateKeyPass).Get();
 		}
 
 		if (!In_Options.CipherSuites.IsEmpty())
 		{
-			this->SSL_Options.enabledCipherSuites = APaho_Manager_Sync::FStringToUTF8(*In_Options.CipherSuites);
+			this->SSL_Options.enabledCipherSuites = (const char*)StringCast<UTF8CHAR>(*In_Options.CipherSuites).Get();
 		}
 
 		return true;
@@ -95,9 +71,9 @@ void APaho_Manager_Sync::MessageDelivered(void* CallbackContext, MQTTClient_deli
 int APaho_Manager_Sync::MessageArrived(void* CallbackContext, char* TopicName, int TopicLenght, MQTTClient_message* Message)
 {
 	FJsonObjectWrapper Arrived;
-	Arrived.JsonObject->SetStringField("TopicName", APaho_Manager_Sync::FStringToUTF8(TopicName));
+	Arrived.JsonObject->SetStringField("TopicName", UTF8_TO_TCHAR(TopicName));
 	Arrived.JsonObject->SetNumberField("TopicLength", TopicLenght);
-	Arrived.JsonObject->SetStringField("Message", APaho_Manager_Sync::UTF8ToFString((char*)Message->payload));
+	Arrived.JsonObject->SetStringField("Message", UTF8_TO_TCHAR((char*)Message->payload));
 
 	MQTTClient_freeMessage(&Message);
 	MQTTClient_free(TopicName);
@@ -119,7 +95,9 @@ int APaho_Manager_Sync::MessageArrived(void* CallbackContext, char* TopicName, i
 
 void APaho_Manager_Sync::ConnectionLost(void* CallbackContext, char* Cause)
 {
-	AsyncTask(ENamedThreads::GameThread, [CallbackContext, Cause]()
+	const FString CauseStr = StringCast<TCHAR>(Cause).Get();
+
+	AsyncTask(ENamedThreads::GameThread, [CallbackContext, CauseStr]()
 	{
 		APaho_Manager_Sync* Owner = Cast<APaho_Manager_Sync>((APaho_Manager_Sync*)CallbackContext);
 
@@ -128,7 +106,7 @@ void APaho_Manager_Sync::ConnectionLost(void* CallbackContext, char* Cause)
 			return;
 		}
 
-		Owner->Delegate_Connection_Lost.Broadcast(APaho_Manager_Sync::UTF8ToFString(Cause));
+		Owner->Delegate_Connection_Lost.Broadcast(CauseStr);
 	});
 }
 

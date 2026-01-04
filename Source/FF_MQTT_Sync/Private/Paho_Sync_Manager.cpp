@@ -1,6 +1,6 @@
 //Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Paho_Manager_Sync.h"
+#include "Paho_Sync_Manager.h"
 
 // Sets default values.
 APaho_Manager_Sync::APaho_Manager_Sync()
@@ -37,10 +37,10 @@ FPahoClientParams APaho_Manager_Sync::GetClientParams()
 	return this->Client_Params;
 }
 
-bool APaho_Manager_Sync::Init_Client(FJsonObjectWrapper& Out_Code, FPahoClientParams In_Params)
+bool APaho_Manager_Sync::Init_Internal(FJsonObjectWrapper& Out_Code, FPahoClientParams In_Params)
 {
-	Out_Code.JsonObject->SetStringField("PluginName", "FF_DB_Connectors");
-	Out_Code.JsonObject->SetStringField("FunctionName", FString(ANSI_TO_TCHAR(__FUNCTION__)));
+	Out_Code.JsonObject->SetStringField("PluginName", "FF_MQTT_Sync");
+	Out_Code.JsonObject->SetStringField("FunctionName", TEXT(__FUNCTION__));
 	TArray<TSharedPtr<FJsonValue>> Details;
 
 	if (this->Client)
@@ -59,12 +59,10 @@ bool APaho_Manager_Sync::Init_Client(FJsonObjectWrapper& Out_Code, FPahoClientPa
 	}
 
 	FString Protocol = In_Params.GetProtocol();
-	TArray<FString> URL_Sections = UKismetStringLibrary::ParseIntoArray(In_Params.Address, "://");
 	
 	MQTTClient TempClient = nullptr;
 
 	MQTTClient_createOptions Create_Options;
-	//memset(&Create_Options, 0, sizeof(MQTTClient_createOptions));
 
 	switch (In_Params.Version)
 	{
@@ -73,7 +71,7 @@ bool APaho_Manager_Sync::Init_Client(FJsonObjectWrapper& Out_Code, FPahoClientPa
 			Create_Options = MQTTClient_createOptions_initializer;
 			Create_Options.MQTTVersion = MQTTVERSION_3_1;
 
-			this->Connection_Options.cleanstart = 1;
+			this->Connection_Options.cleansession = 1;
 
 			if (Protocol == "wss" || Protocol == "ws")
 			{
@@ -84,7 +82,6 @@ bool APaho_Manager_Sync::Init_Client(FJsonObjectWrapper& Out_Code, FPahoClientPa
 			{
 				this->Connection_Options = MQTTClient_connectOptions_initializer;
 			}
-
 
 			break;
 
@@ -129,9 +126,9 @@ bool APaho_Manager_Sync::Init_Client(FJsonObjectWrapper& Out_Code, FPahoClientPa
 		default:
 			
 			Create_Options = MQTTClient_createOptions_initializer;
-			Create_Options.MQTTVersion = MQTTVERSION_3_1;
+			Create_Options.MQTTVersion = MQTTVERSION_3_1_1;
 			
-			this->Connection_Options.cleanstart = 1;
+			this->Connection_Options.cleansession = 1;
 			
 			if (Protocol == "wss" || Protocol == "ws")
 			{
@@ -146,7 +143,7 @@ bool APaho_Manager_Sync::Init_Client(FJsonObjectWrapper& Out_Code, FPahoClientPa
 			break;
 	}
 
-	int RetVal = MQTTClient_createWithOptions(&TempClient, TCHAR_TO_UTF8(*In_Params.Address), TCHAR_TO_UTF8(*In_Params.ClientId), MQTTCLIENT_PERSISTENCE_NONE, NULL, &Create_Options);
+	int RetVal = MQTTClient_createWithOptions(&TempClient, (const char*)StringCast<UTF8CHAR>(*In_Params.Address).Get(), (const char*)StringCast<UTF8CHAR>(*In_Params.ClientId).Get(), MQTTCLIENT_PERSISTENCE_NONE, NULL, &Create_Options);
 
 	if (RetVal != MQTTCLIENT_SUCCESS)
 	{
@@ -158,8 +155,8 @@ bool APaho_Manager_Sync::Init_Client(FJsonObjectWrapper& Out_Code, FPahoClientPa
 	}
 
 	this->Connection_Options.keepAliveInterval = In_Params.KeepAliveInterval;
-	this->Connection_Options.username = TCHAR_TO_UTF8(*In_Params.UserName);
-	this->Connection_Options.password = TCHAR_TO_UTF8(*In_Params.Password);
+	this->Connection_Options.username = (const char*)StringCast<UTF8CHAR>(*In_Params.UserName).Get();
+	this->Connection_Options.password = (const char*)StringCast<UTF8CHAR>(*In_Params.Password).Get();
 	this->Connection_Options.MQTTVersion = (int32)In_Params.Version;
 
 	if (this->SetSSLParams(Protocol, In_Params.SSL_Options))
@@ -242,7 +239,7 @@ void APaho_Manager_Sync::MQTT_Sync_Init(FDelegate_Paho_Connection DelegateConnec
 	AsyncTask(ENamedThreads::AnyNormalThreadNormalTask, [this, DelegateConnection, In_Params]()
 		{
 			FJsonObjectWrapper Out_Code;
-			const bool InitResult = this->Init_Client(Out_Code, In_Params);
+			const bool InitResult = this->Init_Internal(Out_Code, In_Params);
 
 			AsyncTask(ENamedThreads::GameThread, [DelegateConnection, InitResult, Out_Code]()
 				{
@@ -255,19 +252,21 @@ void APaho_Manager_Sync::MQTT_Sync_Init(FDelegate_Paho_Connection DelegateConnec
 
 bool APaho_Manager_Sync::MQTT_Sync_Publish(FJsonObjectWrapper& Out_Code, FString In_Topic, FString In_Payload, EMQTTQOS In_QoS, int32 In_Retained)
 {
-	Out_Code.JsonObject->SetStringField("ClassName", "APaho_Manager_Sync");
-	Out_Code.JsonObject->SetStringField("FunctionName", "MQTT_Publish");
-	Out_Code.JsonObject->SetStringField("AdditionalInfo", "");
+	Out_Code.JsonObject->SetStringField("PluginName", "FF_MQTT_Sync");
+	Out_Code.JsonObject->SetStringField("FunctionName", TEXT(__FUNCTION__));
+	TArray<TSharedPtr<FJsonValue>> Details;
 
 	if (!this->Client)
 	{
-		Out_Code.JsonObject->SetStringField("Description", "Client is not valid.");
+		Details.Add(MakeShared<FJsonValueString>("Client is not valid !"));
+		Out_Code.JsonObject->SetArrayField("Details", Details);
 		return false;
 	}
 
 	if (!MQTTClient_isConnected(this->Client))
 	{
-		Out_Code.JsonObject->SetStringField("Description", "Client is not connected.");
+		Details.Add(MakeShared<FJsonValueString>("Client is not connected !"));
+		Out_Code.JsonObject->SetArrayField("Details", Details);
 		return false;
 	}
 
@@ -277,37 +276,39 @@ bool APaho_Manager_Sync::MQTT_Sync_Publish(FJsonObjectWrapper& Out_Code, FString
 	if (this->Connection_Options.MQTTVersion == MQTTVERSION_5)
 	{
 		MQTTProperties Properties_Publish = MQTTProperties_initializer;
-		const MQTTResponse Response = MQTTClient_publish5(this->Client, TCHAR_TO_UTF8(*In_Topic), In_Payload.Len(), TCHAR_TO_UTF8(*In_Payload), (int32)In_QoS, In_Retained, &Properties_Publish, &DeliveryToken);
+		const MQTTResponse Response = MQTTClient_publish5(this->Client, (const char*)StringCast<UTF8CHAR>(*In_Topic).Get(), In_Payload.Len(), (const char*)StringCast<UTF8CHAR>(*In_Payload).Get(), (int32)In_QoS, In_Retained, &Properties_Publish, &DeliveryToken);
 		RetVal = Response.reasonCode;
 	}
 
 	else
 	{
-		RetVal = MQTTClient_publish(this->Client, TCHAR_TO_UTF8(*In_Topic), In_Payload.Len(), TCHAR_TO_UTF8(*In_Payload), (int32)In_QoS, In_Retained, &DeliveryToken);
+		RetVal = MQTTClient_publish(this->Client, (const char*)StringCast<UTF8CHAR>(*In_Topic).Get(), In_Payload.Len(), (const char*)StringCast<UTF8CHAR>(*In_Payload).Get(), (int32)In_QoS, In_Retained, &DeliveryToken);
 	}
 
-	const FString DescSring = RetVal == MQTTCLIENT_SUCCESS ? "Payload successfully published." : "There was a problem while publishing payload with these configurations.";
-	Out_Code.JsonObject->SetStringField("Description", DescSring);
-	Out_Code.JsonObject->SetStringField("ErrorCode", FString::FromInt(RetVal));
+	const FString ResultString = RetVal == MQTTCLIENT_SUCCESS ? "Payload successfully published." : FString::Printf(TEXT("There was a problem while publishing payload with these configurations : %d"), RetVal);
+	Details.Add(MakeShared<FJsonValueString>(ResultString));
+	Out_Code.JsonObject->SetArrayField("Details", Details);
 	
 	return RetVal == MQTTCLIENT_SUCCESS ? true : false;
 }
 
 bool APaho_Manager_Sync::MQTT_Sync_Subscribe(FJsonObjectWrapper& Out_Code, FString In_Topic, EMQTTQOS In_QoS)
 {
-	Out_Code.JsonObject->SetStringField("ClassName", "APaho_Manager_Sync");
-	Out_Code.JsonObject->SetStringField("FunctionName", "MQTT_Publish");
-	Out_Code.JsonObject->SetStringField("AdditionalInfo", "");
+	Out_Code.JsonObject->SetStringField("PluginName", "FF_MQTT_Sync");
+	Out_Code.JsonObject->SetStringField("FunctionName", TEXT(__FUNCTION__));
+	TArray<TSharedPtr<FJsonValue>> Details;
 
 	if (!this->Client)
 	{
-		Out_Code.JsonObject->SetStringField("Description", "Client is not valid.");
+		Details.Add(MakeShared<FJsonValueString>("Client is not valid !"));
+		Out_Code.JsonObject->SetArrayField("Details", Details);
 		return false;
 	}
 
 	if (!MQTTClient_isConnected(this->Client))
 	{
-		Out_Code.JsonObject->SetStringField("Description", "Client is not connected.");
+		Details.Add(MakeShared<FJsonValueString>("Client is not connected !"));
+		Out_Code.JsonObject->SetArrayField("Details", Details);
 		return false;
 	}
 
@@ -315,47 +316,47 @@ bool APaho_Manager_Sync::MQTT_Sync_Subscribe(FJsonObjectWrapper& Out_Code, FStri
 	
 	if (this->Connection_Options.MQTTVersion == MQTTVERSION_5)
 	{
-		const MQTTResponse Response = MQTTClient_subscribe5(this->Client, TCHAR_TO_UTF8(*In_Topic), (int32)In_QoS, NULL, NULL);
+		const MQTTResponse Response = MQTTClient_subscribe5(this->Client, (const char*)StringCast<UTF8CHAR>(*In_Topic).Get(), (int32)In_QoS, NULL, NULL);
 		RetVal = Response.reasonCode;
 	}
 
 	else
 	{
-		RetVal = MQTTClient_subscribe(this->Client, TCHAR_TO_UTF8(*In_Topic), (int32)In_QoS);
+		RetVal = MQTTClient_subscribe(this->Client, (const char*)StringCast<UTF8CHAR>(*In_Topic).Get(), (int32)In_QoS);
 	}
 
-	const FString DescSring = RetVal == MQTTCLIENT_SUCCESS ? "Topic successfully subscribed." : "There was a problem while subscribing topic with these configurations.";
-	Out_Code.JsonObject->SetStringField("Description", DescSring);
-	Out_Code.JsonObject->SetStringField("ErrorCode", FString::FromInt(RetVal));
+	const FString ResultString = RetVal == MQTTCLIENT_SUCCESS ? "Topic successfully subscribed." : FString::Printf(TEXT("There was a problem while subscribing topic with these configurations. : %d"), RetVal);
+	Details.Add(MakeShared<FJsonValueString>(ResultString));
+	Out_Code.JsonObject->SetArrayField("Details", Details);
 	
 	return RetVal == MQTTCLIENT_SUCCESS ? true : false;
 }
 
 bool APaho_Manager_Sync::MQTT_Sync_Unsubscribe(FJsonObjectWrapper& Out_Code, FString In_Topic)
 {
-	Out_Code.JsonObject->SetStringField("ClassName", "APaho_Manager_Sync");
-	Out_Code.JsonObject->SetStringField("FunctionName", "MQTT_Sync_Unsubscribe");
-	Out_Code.JsonObject->SetStringField("AdditionalInfo", "");
-	Out_Code.JsonObject->SetStringField("ErrorCode", "");
+	Out_Code.JsonObject->SetStringField("PluginName", "FF_MQTT_Sync");
+	Out_Code.JsonObject->SetStringField("FunctionName", TEXT(__FUNCTION__));
+	TArray<TSharedPtr<FJsonValue>> Details;
 
 	if (!this->Client)
 	{
-		Out_Code.JsonObject->SetStringField("Description", "Client is not valid.");
+		Details.Add(MakeShared<FJsonValueString>("Client is not valid !"));
+		Out_Code.JsonObject->SetArrayField("Details", Details);
 		return false;
 	}
 
 	if (!MQTTClient_isConnected(this->Client))
 	{
-		Out_Code.JsonObject->SetStringField("Description", "Client is not connected.");
-		Out_Code.JsonObject->SetStringField("AdditionalInfo", "Try to give some delay before using this or use it after \"Delegate OnConnect\"");
+		Details.Add(MakeShared<FJsonValueString>("Client is not connected !"));
+		Out_Code.JsonObject->SetArrayField("Details", Details);
 		return false;
 	}
 
-	const int RetVal = MQTTClient_unsubscribe(this->Client, TCHAR_TO_UTF8(*In_Topic));
+	const int RetVal = MQTTClient_unsubscribe(this->Client, (const char*)StringCast<UTF8CHAR>(*In_Topic).Get());
 
-	const FString Description = RetVal == MQTTCLIENT_SUCCESS ? "Target successfully unsubscribed." : "There was a problem while unsubscribing target.";
-	Out_Code.JsonObject->SetStringField("Description", Description);
-	Out_Code.JsonObject->SetStringField("ErrorCode", FString::FromInt(RetVal));
+	const FString ResultString = RetVal == MQTTCLIENT_SUCCESS ? "Topic successfully unsubscribed." : FString::Printf(TEXT("There was a problem while unsubscribing topic with these configurations. : %d"), RetVal);
+	Details.Add(MakeShared<FJsonValueString>(ResultString));
+	Out_Code.JsonObject->SetArrayField("Details", Details);
 
 	return RetVal == MQTTCLIENT_SUCCESS ? true : false;
 }

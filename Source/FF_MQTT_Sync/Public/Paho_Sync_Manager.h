@@ -6,10 +6,10 @@
 #include "GameFramework/Actor.h"
 
 // Custom Includes.
-#include "Paho_Includes.h"
 #include "Generic_Includes.h"
+#include "Paho_Sync_Includes.h"
 
-#include "Paho_Manager_Sync.generated.h"
+#include "Paho_Sync_Manager.generated.h"
 
 UCLASS()
 class FF_MQTT_SYNC_API APaho_Manager_Sync : public AActor
@@ -27,10 +27,8 @@ private:
 
 #pragma region Internals
 
-	static const char* FStringToUTF8(const FString& In_String);
-	static FString UTF8ToFString(const char* In_Char, size_t Length = 0);
 	virtual bool SetSSLParams(FString In_Protocol, FPahoSslOptions In_Options);
-	virtual bool Init_Client(FJsonObjectWrapper& Out_Code, FPahoClientParams In_Params);
+	virtual bool Init_Internal(FJsonObjectWrapper& Out_Code, FPahoClientParams In_Params);
 
 #pragma endregion Internals
 	
