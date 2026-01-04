@@ -13,8 +13,8 @@ UENUM(BlueprintType)
 enum class EMQTTVERSION : uint8
 {
 	Default	= 0		UMETA(DisplayName = "Default", ToolTip = "Use 3.1.1 then fall back to 3.1"),
-	V3		= 3		UMETA(DisplayName = "MQTT Version 3"),
-	V3_1	= 4		UMETA(DisplayName = "MQTT Version 3.1"),
+	V3_1	= 3		UMETA(DisplayName = "MQTT Version 3"),
+	V3_1_1	= 4		UMETA(DisplayName = "MQTT Version 3.1"),
 	V_5		= 5		UMETA(DisplayName = "MQTT Version 5"),
 };
 ENUM_CLASS_FLAGS(EMQTTVERSION)

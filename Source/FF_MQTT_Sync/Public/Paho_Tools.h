@@ -1,57 +1,7 @@
 #pragma once
 
-// UE Includes.
-#include "JsonObjectWrapper.h"
-#include "JsonUtilities.h"
-#include "Kismet/KismetMathLibrary.h"
-#include "Kismet/KismetStringLibrary.h"
-
-// Custom Includes.
-#include "MQTT_Enums.h"
-
-#include "MQTT_Includes.generated.h"
-
-USTRUCT(BlueprintType)
-struct FF_MQTT_SYNC_API FPahoArrived
-{
-	GENERATED_BODY()
-
-public:
-
-	UPROPERTY(BlueprintReadOnly)
-	FString Message;
-
-	UPROPERTY(BlueprintReadOnly)
-	FString TopicName;
-
-	UPROPERTY(BlueprintReadOnly)
-	int32 TopicLenght = 0;
-
-	bool operator == (const FPahoArrived& Other) const
-	{
-		return Message == Other.Message && TopicName == Other.TopicName && TopicLenght == Other.TopicLenght;
-	}
-
-	bool operator != (const FPahoArrived& Other) const
-	{
-		return !(*this == Other);
-	}
-};
-
-FORCEINLINE uint32 GetTypeHash(const FPahoArrived& Key)
-{
-	uint32 Hash_Message = GetTypeHash(Key.Message);
-	uint32 Hash_TopicName = GetTypeHash(Key.TopicName);
-	uint32 Hash_TopicLenght = GetTypeHash(Key.TopicLenght);
-
-	uint32 GenericHash;
-	FMemory::Memset(&GenericHash, 0, sizeof(uint32));
-	GenericHash = HashCombine(GenericHash, Hash_Message);
-	GenericHash = HashCombine(GenericHash, Hash_TopicName);
-	GenericHash = HashCombine(GenericHash, Hash_TopicLenght);
-
-	return GenericHash;
-}
+#include "CoreMinimal.h"
+#include "Paho_Tools.generated.h"
 
 USTRUCT(BlueprintType)
 struct FF_MQTT_SYNC_API FPahoSslOptions
@@ -171,7 +121,7 @@ public:
 
 	bool operator == (const FPahoClientParams& Other) const
 	{
-		return ClientId == Other.ClientId && Address == Other.Address && UserName == Other.UserName && Password == Other.Password && KeepAliveInterval == Other.KeepAliveInterval && 
+		return ClientId == Other.ClientId && Address == Other.Address && UserName == Other.UserName && Password == Other.Password && KeepAliveInterval == Other.KeepAliveInterval &&
 			Version == Other.Version && SSL_Options == Other.SSL_Options;
 	}
 
@@ -204,15 +154,9 @@ FORCEINLINE uint32 GetTypeHash(const FPahoClientParams& Key)
 	return GenericHash;
 }
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegate_Paho_Delivered, FString, Out_Result);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegate_Paho_Arrived, FPahoArrived, Out_Result);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegate_Paho_Lost, FString, Out_Cause);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegate_Paho_OnConnect, FJsonObjectWrapper, Out_Result);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegate_Paho_OnConnectFailure, FJsonObjectWrapper, Out_Result);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegate_Paho_OnDisconnect, FJsonObjectWrapper, Out_Result);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegate_Paho_OnDisconnectFailure, FJsonObjectWrapper, Out_Result);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegate_Paho_OnSend, FJsonObjectWrapper, Out_Result);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegate_Paho_OnSendFailure, FJsonObjectWrapper, Out_Result);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegate_Paho_Int, int32, Out_Result);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegate_Paho_String, FString, Out_Result);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegate_Paho_Json, FJsonObjectWrapper, Out_Result);
 
 UDELEGATE(BlueprintAuthorityOnly)
 DECLARE_DYNAMIC_DELEGATE_TwoParams(FDelegate_Paho_Connection, bool, bIsSuccessfull, FJsonObjectWrapper, Out_Code);
