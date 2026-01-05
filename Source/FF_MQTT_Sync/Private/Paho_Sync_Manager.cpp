@@ -250,7 +250,7 @@ void APaho_Manager_Sync::MQTT_Sync_Init(FDelegate_Paho_Connection DelegateConnec
 	);
 }
 
-bool APaho_Manager_Sync::MQTT_Sync_Publish(FJsonObjectWrapper& Out_Code, FString In_Topic, FString In_Payload, EMQTTQOS In_QoS, int32 In_Retained)
+bool APaho_Manager_Sync::MQTT_Sync_Publish(FJsonObjectWrapper& Out_Code, FString In_Topic, FString In_Payload, EMQTTQOS In_QoS, bool bIsRetained)
 {
 	Out_Code.JsonObject->SetStringField("PluginName", "FF_MQTT_Sync");
 	Out_Code.JsonObject->SetStringField("FunctionName", TEXT(__FUNCTION__));
@@ -276,13 +276,13 @@ bool APaho_Manager_Sync::MQTT_Sync_Publish(FJsonObjectWrapper& Out_Code, FString
 	if (this->Connection_Options.MQTTVersion == MQTTVERSION_5)
 	{
 		MQTTProperties Properties_Publish = MQTTProperties_initializer;
-		const MQTTResponse Response = MQTTClient_publish5(this->Client, (const char*)StringCast<UTF8CHAR>(*In_Topic).Get(), In_Payload.Len(), (const char*)StringCast<UTF8CHAR>(*In_Payload).Get(), (int32)In_QoS, In_Retained, &Properties_Publish, &DeliveryToken);
+		const MQTTResponse Response = MQTTClient_publish5(this->Client, (const char*)StringCast<UTF8CHAR>(*In_Topic).Get(), In_Payload.Len(), (const char*)StringCast<UTF8CHAR>(*In_Payload).Get(), (int32)In_QoS, bIsRetained ? 1 : 0, &Properties_Publish, &DeliveryToken);
 		RetVal = Response.reasonCode;
 	}
 
 	else
 	{
-		RetVal = MQTTClient_publish(this->Client, (const char*)StringCast<UTF8CHAR>(*In_Topic).Get(), In_Payload.Len(), (const char*)StringCast<UTF8CHAR>(*In_Payload).Get(), (int32)In_QoS, In_Retained, &DeliveryToken);
+		RetVal = MQTTClient_publish(this->Client, (const char*)StringCast<UTF8CHAR>(*In_Topic).Get(), In_Payload.Len(), (const char*)StringCast<UTF8CHAR>(*In_Payload).Get(), (int32)In_QoS, bIsRetained ? 1 : 0, &DeliveryToken);
 	}
 
 	const FString ResultString = RetVal == MQTTCLIENT_SUCCESS ? "Payload successfully published." : FString::Printf(TEXT("There was a problem while publishing payload with these configurations : %d"), RetVal);

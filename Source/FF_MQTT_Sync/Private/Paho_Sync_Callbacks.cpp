@@ -70,10 +70,13 @@ void APaho_Manager_Sync::MessageDelivered(void* CallbackContext, MQTTClient_deli
 
 int APaho_Manager_Sync::MessageArrived(void* CallbackContext, char* TopicName, int TopicLenght, MQTTClient_message* Message)
 {
+	const FString TopicNameStr = StringCast<UTF8CHAR>(TopicName).Get();
+	const FString PayloadStr = StringCast<UTF8CHAR>((const char*)Message->payload).Get();
+
 	FJsonObjectWrapper Arrived;
-	Arrived.JsonObject->SetStringField("TopicName", UTF8_TO_TCHAR(TopicName));
+	Arrived.JsonObject->SetStringField("TopicName", TopicNameStr);
 	Arrived.JsonObject->SetNumberField("TopicLength", TopicLenght);
-	Arrived.JsonObject->SetStringField("Message", UTF8_TO_TCHAR((char*)Message->payload));
+	Arrived.JsonObject->SetStringField("Message", PayloadStr);
 
 	MQTTClient_freeMessage(&Message);
 	MQTTClient_free(TopicName);
@@ -95,7 +98,7 @@ int APaho_Manager_Sync::MessageArrived(void* CallbackContext, char* TopicName, i
 
 void APaho_Manager_Sync::ConnectionLost(void* CallbackContext, char* Cause)
 {
-	const FString CauseStr = StringCast<TCHAR>(Cause).Get();
+	const FString CauseStr = StringCast<UTF8CHAR>(Cause).Get();
 
 	AsyncTask(ENamedThreads::GameThread, [CallbackContext, CauseStr]()
 	{
