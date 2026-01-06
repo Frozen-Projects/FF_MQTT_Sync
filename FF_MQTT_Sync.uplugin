@@ -23,6 +23,10 @@
 	],
 	"Plugins": [
 		{
+			"Name": "FF_OpenSSL",
+			"Enabled": true
+		},
+		{
 			"Name": "JsonBlueprintUtilities",
 			"Enabled": true
 		}
