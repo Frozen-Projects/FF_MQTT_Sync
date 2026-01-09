@@ -8,9 +8,9 @@ https://slproweb.com/download/Win64OpenSSL-3_6_0.exe
 
 ## INSTALLATION INSTRUCTIONS
 1. If you go with pre-built openssl from the web site that we provide you, make sure that you set binaries location to ``/bin`` folder. Install wizard will ask you about this.
-2. Open ``FF_MQTT_Sync.uplugin`` and remove ``FF_OpenSSL`` plugin. (We have centralized and closed source OpenSSL UE5 wrapper that satisfy all of our openssl dependent plugins. To run this plugin, you don't need that. So, just remove it to prevent issues.)
-3. Copy ``libcrypto-3-x64.dll`` and ``libssl-3-x64.dll`` files from installation's ``/bin`` folder to plugin's ``Source/paho_c_sync/Win64/bin`` folder.
-4. Make sure that you don't have any other plugin that use different ``OpenSSL v3`` than ``v3.6.0``. If you have, you either other build libraries with ``OpenSSL 3.6.0`` or ``Paho`` with your preferred ``OpenSSL v3`` version. Unreal's own OpenSSL module that use OpenSSL 1.1.t is not important.
+2. Open ``FF_MQTT_Sync.uplugin`` and remove ``FF_OpenSSL`` plugin. **(We have centralized and closed source OpenSSL UE5 wrapper that satisfy all of our openssl dependent plugins. To run this plugin, you don't need that. So, just remove it to prevent issues.)**
+3. Copy ``libcrypto-3-x64.dll`` and ``libssl-3-x64.dll`` files from OpenSSL v3 installation's ``/bin`` folder to plugin's ``Source/paho_c_sync/Win64/bin`` folder.
+4. Make sure that you don't have any other plugin that use different ``OpenSSL v3`` than ``v3.6.0``. If you have, you either other build libraries with ``OpenSSL 3.6.0`` or ``Paho`` with your preferred ``OpenSSL v3`` version. Unreal's own OpenSSL module that use ``OpenSSL 1.1.t`` is not important. You can use it in other plugins if you want. **(unfortunately, UE5 already uses it.)**
 
 ## USAGE HINTS
 * I assume that you already know how to connect an MQTT broker.
